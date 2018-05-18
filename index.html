@@ -1,0 +1,104 @@
+<html>
+<head>
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+<!-- jQuery library -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+
+<!-- Latest compiled JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+<link href="https://fonts.googleapis.com/css?family=Share+Tech" rel="stylesheet">
+ 
+<!--<script type ="text/javascript" src="/socket.io/socket.io.js"></script>-->
+<script type ="text/javascript" src="/socket.io/socket.io.js"></script>
+
+
+
+
+</head>
+
+<body>
+
+<div id="mainPage">
+    
+</div>
+
+<script type="text/tpl" id="namespace-group-tpl">
+<div class="container">
+  <p id="time"></p>
+<hr />
+<form id="message-form">
+
+<p>
+	<label>Message</label>
+	<textarea id="message" class="form-control input-message"></textarea>
+</p>
+<p>
+	<label>Send To</label>
+	<select id="send-to" class="form-control">
+	</select>
+</p>
+<button class="btn btn-primary" type="submit">Send</button>
+
+</form>
+<div id="messages"></div>
+</div>
+</script>
+
+<script>
+var socket = io('http://localhost:5000');
+var template = $('#namespace-group-tpl').text();
+  $el = template;
+  $('#mainPage').append($el);
+
+
+function messageSent(data){
+
+    $('#messages').prepend(`
+    	<p>
+    	    <hr />
+    	    <strong>${data.id}</strong><br />
+    	    ${data.message}
+    	</p>
+    	`);
+}
+
+socket.on('socket.joined', function(user){
+	console.log(user);
+	$('#send-to').append(`<option>${user.userId}</option>`);
+});
+
+
+socket.on('message.sent', messageSent);
+
+
+$(function () {
+  
+	var template = $('#namespace-group-tpl').text();
+
+	socket.on('seconds.update', function(data){
+  	var time = new Date(data.time);
+  	$('#time').text(
+  		time.getMonth() + '\/' + time.getDate() + '\/' +
+  		time.getFullYear() + ' ' + time.getHours() + ':' + 
+  		time.getMinutes() + ':' + time.getSeconds());
+    });
+
+    $('#message-form').on('submit', function(e){
+    	e.preventDefault();
+    	messageSent({
+    		id:'Message Sent to ' + $('#send-to').val(),
+    		message: $('#message').val()
+    	});
+    	socket.emit('message.send', {
+    		id:$('#send-to').val(),
+    		message:$('#message').val()
+    	});
+    }); 
+});
+
+
+</script>
+</body>
+</html>
